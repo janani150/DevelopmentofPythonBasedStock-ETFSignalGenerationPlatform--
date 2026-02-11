@@ -1,0 +1,10 @@
+flask
+scikit-learn
+pandas
+numpy
+yfinance
+flask
+scikit-learn
+pandas
+numpy
+yfinance
