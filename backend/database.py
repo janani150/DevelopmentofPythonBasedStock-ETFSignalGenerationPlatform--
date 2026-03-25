@@ -20,3 +20,5 @@ db = client.get_database("signal_platform")
 # Collections
 users_collection = db["users"]
 alerts_collection = db["alerts"]
+# Add this line to your existing database.py
+notifications_collection = db["notifications"]

@@ -14,28 +14,27 @@ export default function SettingsPage() {
   });
 
   const [message, setMessage] = useState("");
-  
+
+  // ✅ Read from localStorage — keys match exactly what LoginPage.tsx saves
   useEffect(() => {
-    fetch("http://localhost:5000/api/user")
-      .then(res => res.json())
-      .then(data => setUser(data))
-      .catch(err => {
-        console.log(err);
-        setMessage("⚠️ Failed to load user data");
-      });
+    const email = localStorage.getItem("userEmail") || "";
+    const name = localStorage.getItem("userName") || "";
+    setUser({ name, email, apiKey: "" });
   }, []);
 
   const handleSave = async () => {
     try {
+      const email = localStorage.getItem("userEmail") || "";
+
       const res = await fetch("http://localhost:5000/api/user", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(user)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name: user.name })
       });
 
       if (res.ok) {
+        // ✅ Update localStorage with new name
+        localStorage.setItem("userName", user.name);
         setMessage("✅ Settings saved successfully!");
       } else {
         setMessage("❌ Failed to save settings");
@@ -69,7 +68,7 @@ export default function SettingsPage() {
           {/* Name */}
           <div>
             <label className="text-sm text-muted-foreground mb-1.5 block">Full Name</label>
-            <Input 
+            <Input
               value={user.name}
               onChange={(e) => setUser({ ...user, name: e.target.value })}
               className="bg-secondary border-border text-foreground"
@@ -79,16 +78,16 @@ export default function SettingsPage() {
           {/* Email */}
           <div>
             <label className="text-sm text-muted-foreground mb-1.5 block">Email</label>
-            <Input 
+            <Input
               value={user.email}
-              onChange={(e) => setUser({ ...user, email: e.target.value })}
-              className="bg-secondary border-border text-foreground"
+              readOnly
+              className="bg-secondary border-border text-foreground opacity-70 cursor-not-allowed"
             />
           </div>
 
         </div>
 
-        <Button 
+        <Button
           onClick={handleSave}
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
@@ -97,17 +96,17 @@ export default function SettingsPage() {
       </motion.div>
 
       {/* API Keys */}
-      <motion.div 
-        initial={{ opacity: 0, y: 12 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ delay: 0.05 }} 
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
         className="glass-card space-y-4"
       >
         <h3 className="section-title text-foreground">API Configuration</h3>
 
         <div>
           <label className="text-sm text-muted-foreground mb-1.5 block">API Key</label>
-          <Input 
+          <Input
             type="password"
             value={user.apiKey}
             onChange={(e) => setUser({ ...user, apiKey: e.target.value })}
@@ -131,10 +130,10 @@ export default function SettingsPage() {
       </motion.div>
 
       {/* Risk */}
-      <motion.div 
-        initial={{ opacity: 0, y: 12 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ delay: 0.1 }} 
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
         className="glass-card space-y-4"
       >
         <h3 className="section-title text-foreground">Risk Tolerance</h3>

@@ -14,6 +14,7 @@ from routes.backtest import backtest_bp
 from routes.portfolio import portfolio_bp
 from routes.dashboard import dashboard_bp
 from routes.market import market_bp
+from routes.user import user_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(alerts_bp, url_prefix='/api/alerts')
@@ -21,6 +22,7 @@ app.register_blueprint(backtest_bp, url_prefix='/api/backtest')
 app.register_blueprint(portfolio_bp, url_prefix='/api/portfolio')
 app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
 app.register_blueprint(market_bp, url_prefix='/api/market')
+app.register_blueprint(user_bp, url_prefix='/api/user')
 
 # ---------------------------------
 # Load Models at Startup
@@ -69,7 +71,7 @@ def predict(ticker):
         if email:
             from database import users_collection
             import uuid
-            
+
             search_entry = {
                 "id": str(uuid.uuid4()),
                 "symbol": result.get("symbol", ticker),
@@ -77,10 +79,10 @@ def predict(ticker):
                 "price": result.get("latest_price", 0),
                 "changePercent": 0,
                 "signal": result.get("signal", "HOLD"),
-                "confidence": result.get("confidence", 0.5) * 100, 
+                "confidence": result.get("confidence", 0.5) * 100,
                 "timestamp": result["timestamp"]
             }
-            
+
             users_collection.update_one(
                 {"email": email},
                 {"$push": {
