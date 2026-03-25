@@ -19,6 +19,8 @@ def predict_signal(ticker, models_dict):
 
     # Grab the current market price before feature engineering removes rows/columns
     current_price = data['Close'].iloc[-1]
+    prev_close = data['Close'].iloc[-2] if len(data) > 1 else current_price
+    change_percent = ((current_price - prev_close) / prev_close) * 100 if prev_close else 0.0
     
     # Convert price to INR if it is in another currency like USD
     try:
@@ -74,7 +76,8 @@ def predict_signal(ticker, models_dict):
         "symbol": ticker,
         "signal": signal_map.get(prediction, "UNKNOWN"),
         "confidence": round(float(confidence), 2),
-        "latest_price": round(float(current_price), 2)
+        "latest_price": round(float(current_price), 2),
+        "change_percent": round(float(change_percent), 2)
     }
 
     return result
