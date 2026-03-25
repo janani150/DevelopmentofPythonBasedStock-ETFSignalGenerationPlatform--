@@ -27,10 +27,10 @@ export default function MarketDataPage() {
           setMarketData(json.data);
           
           const sorted = [...json.data].sort((a, b) => b.change - a.change);
-          setTopGainers(sorted.slice(0, 3));
+          setTopGainers(sorted.filter((s) => s.change > 0).slice(0, 3));
           
           const sortedLosers = [...json.data].sort((a, b) => a.change - b.change);
-          setTopLosers(sortedLosers.slice(0, 3));
+          setTopLosers(sortedLosers.filter((s) => s.change < 0).slice(0, 3));
         }
       } catch (err) {
         console.error("Error fetching market data:", err);
@@ -83,7 +83,7 @@ export default function MarketDataPage() {
                 </div>
                 <div className="text-right">
                   <div className="font-mono text-foreground text-sm">₹{s.price.toFixed(2)}</div>
-                  <div className="text-gain text-sm font-mono">+{s.change.toFixed(2)}%</div>
+                  <div className={`text-sm font-mono ${s.change >= 0 ? "text-gain" : "text-loss"}`}>{s.change > 0 ? "+" : ""}{s.change.toFixed(2)}%</div>
                 </div>
               </div>
             ))}
@@ -103,7 +103,7 @@ export default function MarketDataPage() {
                 </div>
                 <div className="text-right">
                   <div className="font-mono text-foreground text-sm">₹{s.price.toFixed(2)}</div>
-                  <div className="text-loss text-sm font-mono">{s.change.toFixed(2)}%</div>
+                  <div className={`text-sm font-mono ${s.change >= 0 ? "text-gain" : "text-loss"}`}>{s.change > 0 ? "+" : ""}{s.change.toFixed(2)}%</div>
                 </div>
               </div>
             ))}

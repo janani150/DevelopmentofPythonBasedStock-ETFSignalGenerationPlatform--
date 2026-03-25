@@ -77,7 +77,7 @@ def predict(ticker):
                 "symbol": result.get("symbol", ticker),
                 "name": ticker,
                 "price": result.get("latest_price", 0),
-                "changePercent": 0,
+                "changePercent": result.get("change_percent", 0),
                 "signal": result.get("signal", "HOLD"),
                 "confidence": result.get("confidence", 0.5) * 100,
                 "timestamp": result["timestamp"]
