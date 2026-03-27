@@ -124,6 +124,3 @@ This project is a demo/proof-of-concept. See the repository license file: [licen
 
 If you prefer a different license (MIT, Apache-2.0, etc.) tell me and I can add a standard `LICENSE` file.
 
----
-
-If you'd like, I can: update this README with badges, add a quick Docker Compose file for local dev, or create a CONTRIBUTING guide. Which would you prefer next?
