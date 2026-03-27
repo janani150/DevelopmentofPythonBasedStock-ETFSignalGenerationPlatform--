@@ -3,110 +3,36 @@ import { motion } from "framer-motion";
 import { Brain, TrendingUp, TrendingDown, Minus, Loader2, Info } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line } from "recharts";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { mockCandlestickData } from "@/lib/mockData";
 import { ChartSkeleton } from "@/components/ui/PageSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 
-const models = ["Random Forest", "LSTM Neural Network", "Gradient Boosting", "XGBoost"];
 const timeframes = ["1D", "1W", "1M", "3M", "1Y"];
 
-// Model-specific configurations
-const modelConfigs: Record<string, {
-  description: string;
-  baseConfidence: number;
-  features: { feature: string; importance: number }[];
-  signalBias: "bullish" | "bearish" | "neutral";
-  metrics: { label: string; value: string }[];
-}> = {
-  "Random Forest": {
-    description: "Ensemble of decision trees with bootstrap aggregation for robust predictions",
-    baseConfidence: 85,
-    signalBias: "bullish",
-    features: [
-      { feature: "RSI (14)", importance: 0.23 },
-      { feature: "MACD Signal", importance: 0.19 },
-      { feature: "Volume MA", importance: 0.16 },
-      { feature: "Bollinger Band", importance: 0.14 },
-      { feature: "EMA (50)", importance: 0.11 },
-      { feature: "ATR (14)", importance: 0.09 },
-      { feature: "Stochastic", importance: 0.08 },
-    ],
-    metrics: [
-      { label: "Trees", value: "500" },
-      { label: "Max Depth", value: "12" },
-      { label: "Accuracy", value: "87.3%" },
-    ],
-  },
-  "LSTM Neural Network": {
-    description: "Deep learning model specialized for sequential time-series pattern recognition",
-    baseConfidence: 78,
-    signalBias: "neutral",
-    features: [
-      { feature: "Price Momentum", importance: 0.28 },
-      { feature: "Volume Trend", importance: 0.22 },
-      { feature: "Volatility Pattern", importance: 0.18 },
-      { feature: "Moving Avg Cross", importance: 0.12 },
-      { feature: "Support/Resistance", importance: 0.10 },
-      { feature: "Trend Direction", importance: 0.06 },
-      { feature: "Seasonality", importance: 0.04 },
-    ],
-    metrics: [
-      { label: "Layers", value: "4" },
-      { label: "Units", value: "128" },
-      { label: "Epochs", value: "100" },
-    ],
-  },
-  "Gradient Boosting": {
-    description: "Sequential ensemble method that builds trees to correct previous errors",
-    baseConfidence: 82,
-    signalBias: "bearish",
-    features: [
-      { feature: "Price Change %", importance: 0.25 },
-      { feature: "RSI Divergence", importance: 0.20 },
-      { feature: "MACD Histogram", importance: 0.17 },
-      { feature: "Volume Spike", importance: 0.13 },
-      { feature: "52W High/Low", importance: 0.10 },
-      { feature: "Sector Momentum", importance: 0.08 },
-      { feature: "VIX Correlation", importance: 0.07 },
-    ],
-    metrics: [
-      { label: "Estimators", value: "200" },
-      { label: "Learning Rate", value: "0.05" },
-      { label: "AUC Score", value: "0.89" },
-    ],
-  },
-  "XGBoost": {
-    description: "Optimized gradient boosting with regularization for high performance",
-    baseConfidence: 91,
-    signalBias: "bullish",
-    features: [
-      { feature: "Technical Score", importance: 0.26 },
-      { feature: "Momentum Index", importance: 0.21 },
-      { feature: "Volatility Adj.", importance: 0.15 },
-      { feature: "Relative Strength", importance: 0.14 },
-      { feature: "Order Flow", importance: 0.10 },
-      { feature: "Sentiment Score", importance: 0.08 },
-      { feature: "Macro Factor", importance: 0.06 },
-    ],
-    metrics: [
-      { label: "Rounds", value: "300" },
-      { label: "Max Depth", value: "8" },
-      { label: "F1 Score", value: "0.92" },
-    ],
-  },
-};
+// Feature importance data (will come from backend in production)
+const defaultFeatures = [
+  { feature: "Price Momentum", importance: 0.28 },
+  { feature: "Volume Trend", importance: 0.22 },
+  { feature: "Technical Indicators", importance: 0.18 },
+  { feature: "Moving Averages", importance: 0.12 },
+  { feature: "Support/Resistance", importance: 0.10 },
+  { feature: "Volatility", importance: 0.06 },
+  { feature: "Market Sentiment", importance: 0.04 },
+];
 
+const modelMetrics = [
+  { label: "Accuracy", value: "89.2%" },
+  { label: "Precision", value: "0.87" },
+  { label: "Recall", value: "0.85" },
+];
 
 export default function SignalEngine() {
-  const [model, setModel] = useState("Random Forest");
   const [symbol, setSymbol] = useState("AAPL");
   const [timeframe, setTimeframe] = useState("1M");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [resultKey, setResultKey] = useState(0); // To trigger re-animation
-
+  const [resultKey, setResultKey] = useState(0);
   const [apiResult, setApiResult] = useState<any>(null);
 
   const handleGenerate = async () => {
@@ -114,8 +40,11 @@ export default function SignalEngine() {
     setGenerated(false);
     try {
       const userEmail = localStorage.getItem("userEmail") || "";
-      const emailQuery = userEmail ? `?email=${userEmail}` : "";
-      const response = await fetch(`http://127.0.0.1:5000/predict/${symbol}${emailQuery}`);
+      const emailQuery = userEmail ? `&email=${userEmail}` : "";
+      const response = await fetch(
+        `http://127.0.0.1:5000/predict/${symbol}?timeframe=${timeframe}${emailQuery}`
+      );
+      
       if (!response.ok) {
         throw new Error("Failed to fetch prediction");
       }
@@ -125,21 +54,20 @@ export default function SignalEngine() {
         throw new Error(data.message);
       }
       
-      const config = modelConfigs[model as keyof typeof modelConfigs] || modelConfigs["Random Forest"];
-      
       setApiResult({
         signal: data.signal || "HOLD",
         confidence: data.confidence ? Math.round(data.confidence * 100) : 50,
-        features: config.features,
-        description: config.description,
-        metrics: config.metrics
+        features: data.features || defaultFeatures,
+        description: data.description || "AI-powered trading signal based on advanced machine learning algorithms analyzing historical price data and market patterns.",
+        metrics: data.metrics || modelMetrics,
+        timeframe_used: timeframe
       });
       
       setResultKey((k) => k + 1);
       setGenerated(true);
     } catch (error) {
       console.error(error);
-      alert("Error generating signal from backend: " + error);
+      alert("Error generating signal: " + error);
     } finally {
       setLoading(false);
     }
@@ -154,23 +82,15 @@ export default function SignalEngine() {
 
       {/* Controls */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-          <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">ML Model</label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger className="bg-secondary border-border text-foreground">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                {models.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
           <div>
             <label className="text-sm text-muted-foreground mb-1.5 block">Stock Symbol</label>
-            <Input value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} placeholder="AAPL" className="bg-secondary border-border text-foreground font-mono" />
+            <Input 
+              value={symbol} 
+              onChange={(e) => setSymbol(e.target.value.toUpperCase())} 
+              placeholder="AAPL" 
+              className="bg-secondary border-border text-foreground font-mono" 
+            />
           </div>
           <div>
             <label className="text-sm text-muted-foreground mb-1.5 block">Timeframe</label>
@@ -188,7 +108,7 @@ export default function SignalEngine() {
               ))}
             </div>
           </div>
-          <div className="sm:col-span-2 lg:col-span-2 flex justify-end">
+          <div className="flex justify-end">
             <Button onClick={handleGenerate} disabled={loading} className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-10 w-full sm:w-auto">
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
               {loading ? "Analyzing..." : "Generate Signal"}
@@ -208,7 +128,7 @@ export default function SignalEngine() {
         <EmptyState
           icon={Brain}
           title="No Signal Generated"
-          description="Select a model, enter a stock symbol, and click Generate Signal to see AI-powered trading recommendations."
+          description="Enter a stock symbol, select a timeframe, and click Generate Signal to see AI-powered trading recommendations."
         />
       )}
 
@@ -223,7 +143,7 @@ export default function SignalEngine() {
           >
             <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-foreground">{model}</span>
+              <span className="font-semibold text-foreground">Analysis for {symbol} ({apiResult.timeframe_used})</span>
               <p className="text-sm text-muted-foreground mt-0.5">{apiResult.description}</p>
             </div>
           </motion.div>
@@ -272,7 +192,7 @@ export default function SignalEngine() {
               {/* Model Metrics */}
               <div className="mt-6 w-full px-4">
                 <div className="border-t border-border pt-4">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Model Parameters</span>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Model Performance</span>
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     {apiResult.metrics.map((m: any) => (
                       <div key={m.label} className="text-center">
@@ -293,11 +213,11 @@ export default function SignalEngine() {
               transition={{ delay: 0.1 }}
               className="glass-card lg:col-span-2"
             >
-              <h3 className="section-title text-foreground mb-4">Feature Importance — {model}</h3>
+              <h3 className="section-title text-foreground mb-4">Key Factors Influencing Signal</h3>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={apiResult.features} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 20%, 18%)" />
-                  <XAxis type="number" stroke="hsl(215, 15%, 55%)" fontSize={12} domain={[0, 0.3]} />
+                  <XAxis type="number" stroke="hsl(215, 15%, 55%)" fontSize={12} domain={[0, 0.35]} />
                   <YAxis dataKey="feature" type="category" stroke="hsl(215, 15%, 55%)" fontSize={11} width={110} />
                   <Tooltip
                     contentStyle={{ background: "hsl(222, 41%, 10%)", border: "1px solid hsl(222, 20%, 18%)", borderRadius: 8, color: "hsl(210, 20%, 93%)" }}
