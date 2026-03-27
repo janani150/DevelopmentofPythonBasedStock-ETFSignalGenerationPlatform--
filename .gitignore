@@ -1,0 +1,22 @@
+.env
+.env.local
+.env.*.local
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+
+# Node
+node_modules/
+
+# Local envs
+*.local
+
+# Logs
+logs
+*.log
