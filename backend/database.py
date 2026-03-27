@@ -4,12 +4,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MONGO_URI = os.getenv("MONGO_URI")
-
+# Prefer explicit environment variable usage; fallback to localhost for local dev only
+MONGO_URI = os.environ.get("MONGO_URI")
 if not MONGO_URI:
-    print("WARNING: MONGO_URI not set in environment variables.")
-    # Fallback to localhost if no cloud DB specified for whatever reason
-    MONGO_URI = "mongodb://localhost:27017/"
+    print("WARNING: MONGO_URI not set in environment variables. Falling back to localhost (dev only).")
+    MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 
 # Create client
 client = MongoClient(MONGO_URI)

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_BASE } from "@/lib/api";
 import { Search, Bell, Menu, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { toast } from "sonner";
 import LiveClock from "@/components/ui/LiveClock";
 
@@ -53,7 +58,7 @@ export default function TopNavbar({ onMenuToggle }: TopNavbarProps) {
     if (!userEmail) return;
     try {
       const res = await fetch(
-        `http://127.0.0.1:5000/api/alerts/notifications/${userEmail}`
+        `${API_BASE}/api/alerts/notifications/${userEmail}`,
       );
       const data = await res.json();
       if (data.status === "success") {
@@ -77,10 +82,9 @@ export default function TopNavbar({ onMenuToggle }: TopNavbarProps) {
     setOpen(isOpen);
     if (isOpen && unreadCount > 0) {
       try {
-        await fetch(
-          `http://127.0.0.1:5000/api/alerts/notifications/${userEmail}/read`,
-          { method: "POST" }
-        );
+        await fetch(`${API_BASE}/api/alerts/notifications/${userEmail}/read`, {
+          method: "POST",
+        });
         setUnreadCount(0);
         // Update local state to mark all as read
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -98,7 +102,6 @@ export default function TopNavbar({ onMenuToggle }: TopNavbarProps) {
 
   return (
     <header className="sticky top-0 z-30 h-14 md:h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-4 md:px-6 gap-3">
-      
       {/* Mobile menu button */}
       <Button
         variant="ghost"
@@ -216,7 +219,11 @@ export default function TopNavbar({ onMenuToggle }: TopNavbarProps) {
         {/* Profile dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full"
+            >
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
                   {userInitials}

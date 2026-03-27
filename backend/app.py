@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from services.model_loader import load_models
@@ -6,7 +7,14 @@ from services.stock_universe import get_all_tickers
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)
+
+# Configure CORS origins via environment variable (comma-separated), default allow all for backwards-compatibility
+cors_origins = os.getenv("CORS_ORIGINS", "*")
+if cors_origins.strip() == "*":
+    CORS(app)
+else:
+    origins = [o.strip() for o in cors_origins.split(",") if o.strip()]
+    CORS(app, resources={r"/api/*": {"origins": origins}})
 
 from routes.auth import auth_bp
 from routes.alerts import alerts_bp
@@ -106,4 +114,8 @@ def predict(ticker):
 # Run Server
 # ---------------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Use PORT env var if provided (Render/Gunicorn will set PORT in production)
+    port = int(os.getenv("PORT", 5000))
+    # FLASK_DEBUG can be set to 'True' to enable debug mode locally
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() in ("1", "true", "yes")
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)

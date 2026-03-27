@@ -1,15 +1,17 @@
-import axios from "axios"
+import axios from "axios";
 
-const API = axios.create({
-  baseURL: "http://localhost:5000"
-})
+export const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
+
+export const api = axios.create({
+  baseURL: API_BASE,
+});
 
 export const getStocks = async () => {
-  const res = await API.get("/stocks")
-  return res.data
-}
+  const res = await api.get("/stocks");
+  return res.data;
+};
 
 export const getPrediction = async (ticker: string) => {
-  const res = await API.get(`/predict/${ticker}`)
-  return res.data
-}
+  const res = await api.get(`/predict/${ticker}`);
+  return res.data;
+};

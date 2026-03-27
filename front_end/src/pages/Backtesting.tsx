@@ -1,7 +1,16 @@
 import { useState } from "react";
+import { API_BASE } from "@/lib/api";
 import { motion } from "framer-motion";
 import { Play, Loader2, History } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatCardSkeleton, ChartSkeleton } from "@/components/ui/PageSkeleton";
@@ -21,15 +30,15 @@ export default function Backtesting() {
     setLoading(true);
     setRan(false);
     try {
-      const payload = { 
-        startDate, 
-        endDate, 
-        initialCapital: Number(initialCapital) 
+      const payload = {
+        startDate,
+        endDate,
+        initialCapital: Number(initialCapital),
       };
-      const response = await fetch("http://127.0.0.1:5000/api/backtest", {
+      const response = await fetch(`${API_BASE}/api/backtest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (!data.error) {
@@ -40,66 +49,108 @@ export default function Backtesting() {
       }
     } catch (e) {
       console.error(e);
-      alert("Failed to run backtest. Make sure the backend terminal is running!");
+      alert(
+        "Failed to run backtest. Make sure the backend terminal is running!",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const metrics = results ? [
-    { label: "Sharpe Ratio", value: results.sharpeRatio.toFixed(2), good: results.sharpeRatio > 1 },
-    { label: "Max Drawdown", value: `${results.maxDrawdown}%`, good: false },
-    { label: "Win Rate", value: `${results.winRate}%`, good: results.winRate > 50 },
-    { label: "CAGR", value: `${results.cagr}%`, good: true },
-    { label: "Total Trades", value: results.totalTrades.toString(), good: true },
-    { label: "Profit Factor", value: results.profitFactor.toFixed(1), good: results.profitFactor > 1 },
-  ] : [];
+  const metrics = results
+    ? [
+        {
+          label: "Sharpe Ratio",
+          value: results.sharpeRatio.toFixed(2),
+          good: results.sharpeRatio > 1,
+        },
+        {
+          label: "Max Drawdown",
+          value: `${results.maxDrawdown}%`,
+          good: false,
+        },
+        {
+          label: "Win Rate",
+          value: `${results.winRate}%`,
+          good: results.winRate > 50,
+        },
+        { label: "CAGR", value: `${results.cagr}%`, good: true },
+        {
+          label: "Total Trades",
+          value: results.totalTrades.toString(),
+          good: true,
+        },
+        {
+          label: "Profit Factor",
+          value: results.profitFactor.toFixed(1),
+          good: results.profitFactor > 1,
+        },
+      ]
+    : [];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">Backtesting</h1>
-        <p className="text-muted-foreground text-sm">Test ML trading strategy against historical data</p>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">
+          Backtesting
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Test ML trading strategy against historical data
+        </p>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-card"
+      >
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 items-end">
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Start Date</label>
-            <Input 
-              type="date" 
-              value={startDate} 
-              onChange={(e) => setStartDate(e.target.value)} 
-              className="bg-secondary border-border text-foreground" 
+            <label className="text-sm text-muted-foreground mb-1.5 block">
+              Start Date
+            </label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-secondary border-border text-foreground"
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">End Date</label>
-            <Input 
-              type="date" 
-              value={endDate} 
-              onChange={(e) => setEndDate(e.target.value)} 
-              className="bg-secondary border-border text-foreground" 
+            <label className="text-sm text-muted-foreground mb-1.5 block">
+              End Date
+            </label>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-secondary border-border text-foreground"
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Initial Capital</label>
-            <Input 
-              type="number" 
-              value={initialCapital} 
-              onChange={(e) => setInitialCapital(e.target.value)} 
-              className="bg-secondary border-border text-foreground font-mono" 
+            <label className="text-sm text-muted-foreground mb-1.5 block">
+              Initial Capital
+            </label>
+            <Input
+              type="number"
+              value={initialCapital}
+              onChange={(e) => setInitialCapital(e.target.value)}
+              className="bg-secondary border-border text-foreground font-mono"
             />
           </div>
         </div>
-        
+
         <div className="mt-4 flex justify-end">
-          <Button 
-            onClick={handleRun} 
-            disabled={loading} 
+          <Button
+            onClick={handleRun}
+            disabled={loading}
             className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-8"
           >
-            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+            {loading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Play className="w-4 h-4 mr-2" />
+            )}
             {loading ? "Running..." : "Run Backtest"}
           </Button>
         </div>
@@ -125,15 +176,17 @@ export default function Backtesting() {
           {/* Performance Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
             {metrics.map((m, i) => (
-              <motion.div 
-                key={m.label} 
-                initial={{ opacity: 0, y: 12 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: i * 0.05 }} 
+              <motion.div
+                key={m.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
                 className="stat-card text-center"
               >
                 <span className="stat-label text-xs">{m.label}</span>
-                <span className={`stat-value text-lg md:text-2xl ${m.good ? "text-gain" : "text-loss"}`}>
+                <span
+                  className={`stat-value text-lg md:text-2xl ${m.good ? "text-gain" : "text-loss"}`}
+                >
                   {m.value}
                 </span>
               </motion.div>
@@ -149,54 +202,66 @@ export default function Backtesting() {
           >
             <History className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-foreground">RSI Mean Reversion Strategy</span>
+              <span className="font-semibold text-foreground">
+                RSI Mean Reversion Strategy
+              </span>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Machine learning enhanced RSI mean reversion strategy that identifies oversold/overbought conditions 
-                and executes trades based on historical patterns and market momentum.
+                Machine learning enhanced RSI mean reversion strategy that
+                identifies oversold/overbought conditions and executes trades
+                based on historical patterns and market momentum.
               </p>
             </div>
           </motion.div>
 
           {/* Performance Chart */}
-          <motion.div 
-            initial={{ opacity: 0, y: 12 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: 0.3 }} 
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
             className="glass-card"
           >
-            <h3 className="section-title text-foreground mb-4">Performance Chart</h3>
+            <h3 className="section-title text-foreground mb-4">
+              Performance Chart
+            </h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={results.equityCurve}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 20%, 18%)" />
-                <XAxis dataKey="date" stroke="hsl(215, 15%, 55%)" fontSize={12} />
-                <YAxis 
-                  stroke="hsl(215, 15%, 55%)" 
-                  fontSize={12} 
-                  tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} 
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(222, 20%, 18%)"
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: "hsl(222, 41%, 10%)", 
-                    border: "1px solid hsl(222, 20%, 18%)", 
-                    borderRadius: 8, 
-                    color: "hsl(210, 20%, 93%)" 
-                  }} 
+                <XAxis
+                  dataKey="date"
+                  stroke="hsl(215, 15%, 55%)"
+                  fontSize={12}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="hsl(160, 84%, 39%)" 
-                  strokeWidth={2} 
-                  dot={false} 
+                <YAxis
+                  stroke="hsl(215, 15%, 55%)"
+                  fontSize={12}
+                  tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(222, 41%, 10%)",
+                    border: "1px solid hsl(222, 20%, 18%)",
+                    borderRadius: 8,
+                    color: "hsl(210, 20%, 93%)",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="hsl(160, 84%, 39%)"
+                  strokeWidth={2}
+                  dot={false}
                   name="ML Strategy"
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="benchmark" 
-                  stroke="hsl(215, 15%, 55%)" 
-                  strokeWidth={1.5} 
-                  strokeDasharray="4 4" 
-                  dot={false} 
+                <Line
+                  type="monotone"
+                  dataKey="benchmark"
+                  stroke="hsl(215, 15%, 55%)"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  dot={false}
                   name="Benchmark (Buy & Hold)"
                 />
               </LineChart>
@@ -204,13 +269,15 @@ export default function Backtesting() {
           </motion.div>
 
           {/* Trade History */}
-          <motion.div 
-            initial={{ opacity: 0, y: 12 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: 0.4 }} 
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
             className="glass-card"
           >
-            <h3 className="section-title text-foreground mb-4">Trade History</h3>
+            <h3 className="section-title text-foreground mb-4">
+              Trade History
+            </h3>
             <div className="overflow-x-auto -mx-5 px-5">
               <table className="w-full text-sm min-w-[650px]">
                 <thead>
@@ -222,25 +289,41 @@ export default function Backtesting() {
                     <th className="pb-3 font-medium">Exit</th>
                     <th className="pb-3 font-medium">P&L</th>
                     <th className="pb-3 font-medium">Return</th>
-                   </tr>
+                  </tr>
                 </thead>
                 <tbody>
                   {results.trades.map((t: any) => (
-                    <tr key={t.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                    <tr
+                      key={t.id}
+                      className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                    >
                       <td className="py-3 text-muted-foreground">{t.date}</td>
-                      <td className="py-3 font-mono font-semibold text-foreground">{t.symbol}</td>
+                      <td className="py-3 font-mono font-semibold text-foreground">
+                        {t.symbol}
+                      </td>
                       <td className="py-3">
-                        <span className={`signal-badge-${t.type === "LONG" ? "buy" : "sell"}`}>
+                        <span
+                          className={`signal-badge-${t.type === "LONG" ? "buy" : "sell"}`}
+                        >
                           {t.type}
                         </span>
                       </td>
-                      <td className="py-3 font-mono text-foreground">₹{t.entry.toFixed(2)}</td>
-                      <td className="py-3 font-mono text-foreground">₹{t.exit.toFixed(2)}</td>
-                      <td className={`py-3 font-mono ${t.pnl >= 0 ? "text-gain" : "text-loss"}`}>
+                      <td className="py-3 font-mono text-foreground">
+                        ₹{t.entry.toFixed(2)}
+                      </td>
+                      <td className="py-3 font-mono text-foreground">
+                        ₹{t.exit.toFixed(2)}
+                      </td>
+                      <td
+                        className={`py-3 font-mono ${t.pnl >= 0 ? "text-gain" : "text-loss"}`}
+                      >
                         {t.pnl >= 0 ? "+" : ""}₹{t.pnl.toFixed(2)}
                       </td>
-                      <td className={`py-3 font-mono ${t.pnlPercent >= 0 ? "text-gain" : "text-loss"}`}>
-                        {t.pnlPercent >= 0 ? "+" : ""}{t.pnlPercent.toFixed(2)}%
+                      <td
+                        className={`py-3 font-mono ${t.pnlPercent >= 0 ? "text-gain" : "text-loss"}`}
+                      >
+                        {t.pnlPercent >= 0 ? "+" : ""}
+                        {t.pnlPercent.toFixed(2)}%
                       </td>
                     </tr>
                   ))}

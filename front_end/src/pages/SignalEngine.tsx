@@ -1,7 +1,25 @@
 import { useState } from "react";
+import { API_BASE } from "@/lib/api";
 import { motion } from "framer-motion";
-import { Brain, TrendingUp, TrendingDown, Minus, Loader2, Info } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line } from "recharts";
+import {
+  Brain,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Loader2,
+  Info,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ComposedChart,
+  Line,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockCandlestickData } from "@/lib/mockData";
@@ -14,7 +32,7 @@ const defaultFeatures = [
   { feature: "Volume Trend", importance: 0.22 },
   { feature: "Technical Indicators", importance: 0.18 },
   { feature: "Moving Averages", importance: 0.12 },
-  { feature: "Support/Resistance", importance: 0.10 },
+  { feature: "Support/Resistance", importance: 0.1 },
   { feature: "Volatility", importance: 0.06 },
   { feature: "Market Sentiment", importance: 0.04 },
 ];
@@ -40,26 +58,28 @@ export default function SignalEngine() {
       const emailQuery = userEmail ? `?email=${userEmail}` : "";
       // Removed timeframe parameter from API call
       const response = await fetch(
-        `http://127.0.0.1:5000/predict/${symbol}${emailQuery}`
+        `${API_BASE}/predict/${symbol}${emailQuery}`,
       );
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch prediction");
       }
       const data = await response.json();
-      
+
       if (data.status === "error") {
         throw new Error(data.message);
       }
-      
+
       setApiResult({
         signal: data.signal || "HOLD",
         confidence: data.confidence ? Math.round(data.confidence * 100) : 50,
         features: data.features || defaultFeatures,
-        description: data.description || "AI-powered trading signal based on advanced machine learning algorithms analyzing historical price data and market patterns.",
+        description:
+          data.description ||
+          "AI-powered trading signal based on advanced machine learning algorithms analyzing historical price data and market patterns.",
         metrics: data.metrics || modelMetrics,
       });
-      
+
       setResultKey((k) => k + 1);
       setGenerated(true);
     } catch (error) {
@@ -73,25 +93,43 @@ export default function SignalEngine() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">ML Signal Engine</h1>
-        <p className="text-muted-foreground text-sm">Generate AI-powered trading signals</p>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">
+          ML Signal Engine
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Generate AI-powered trading signals
+        </p>
       </div>
 
       {/* Controls - Simplified without timeframe */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-card"
+      >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Stock Symbol</label>
-            <Input 
-              value={symbol} 
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())} 
-              placeholder="AAPL" 
-              className="bg-secondary border-border text-foreground font-mono" 
+            <label className="text-sm text-muted-foreground mb-1.5 block">
+              Stock Symbol
+            </label>
+            <Input
+              value={symbol}
+              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+              placeholder="AAPL"
+              className="bg-secondary border-border text-foreground font-mono"
             />
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleGenerate} disabled={loading} className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-10 w-full sm:w-auto">
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
+            <Button
+              onClick={handleGenerate}
+              disabled={loading}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-10 w-full sm:w-auto"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Brain className="w-4 h-4 mr-2" />
+              )}
               {loading ? "Analyzing..." : "Generate Signal"}
             </Button>
           </div>
@@ -101,7 +139,9 @@ export default function SignalEngine() {
       {loading && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <ChartSkeleton height={200} />
-          <div className="lg:col-span-2"><ChartSkeleton height={200} /></div>
+          <div className="lg:col-span-2">
+            <ChartSkeleton height={200} />
+          </div>
         </div>
       )}
 
@@ -124,8 +164,12 @@ export default function SignalEngine() {
           >
             <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-foreground">Analysis for {symbol}</span>
-              <p className="text-sm text-muted-foreground mt-0.5">{apiResult.description}</p>
+              <span className="font-semibold text-foreground">
+                Analysis for {symbol}
+              </span>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {apiResult.description}
+              </p>
             </div>
           </motion.div>
 
@@ -137,24 +181,44 @@ export default function SignalEngine() {
               animate={{ opacity: 1, scale: 1 }}
               className="glass-card flex flex-col items-center justify-center py-8"
             >
-              <span className="text-sm text-muted-foreground mb-3">Signal for {symbol}</span>
-              <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mb-4 ${
-                apiResult.signal === "BUY" ? "bg-gain/10 text-gain" : 
-                apiResult.signal === "SELL" ? "bg-loss/10 text-loss" : 
-                "bg-warning/10 text-warning"
-              }`}>
-                {apiResult.signal === "BUY" ? <TrendingUp className="w-8 h-8 md:w-10 md:h-10" /> : 
-                 apiResult.signal === "SELL" ? <TrendingDown className="w-8 h-8 md:w-10 md:h-10" /> : 
-                 <Minus className="w-8 h-8 md:w-10 md:h-10" />}
+              <span className="text-sm text-muted-foreground mb-3">
+                Signal for {symbol}
+              </span>
+              <div
+                className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mb-4 ${
+                  apiResult.signal === "BUY"
+                    ? "bg-gain/10 text-gain"
+                    : apiResult.signal === "SELL"
+                      ? "bg-loss/10 text-loss"
+                      : "bg-warning/10 text-warning"
+                }`}
+              >
+                {apiResult.signal === "BUY" ? (
+                  <TrendingUp className="w-8 h-8 md:w-10 md:h-10" />
+                ) : apiResult.signal === "SELL" ? (
+                  <TrendingDown className="w-8 h-8 md:w-10 md:h-10" />
+                ) : (
+                  <Minus className="w-8 h-8 md:w-10 md:h-10" />
+                )}
               </div>
-              <span className={`text-2xl md:text-3xl font-bold ${
-                apiResult.signal === "BUY" ? "text-gain" : 
-                apiResult.signal === "SELL" ? "text-loss" : 
-                "text-warning"
-              }`}>{apiResult.signal}</span>
+              <span
+                className={`text-2xl md:text-3xl font-bold ${
+                  apiResult.signal === "BUY"
+                    ? "text-gain"
+                    : apiResult.signal === "SELL"
+                      ? "text-loss"
+                      : "text-warning"
+                }`}
+              >
+                {apiResult.signal}
+              </span>
               <div className="mt-4 flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Confidence:</span>
-                <span className="text-lg font-bold text-foreground">{apiResult.confidence}%</span>
+                <span className="text-sm text-muted-foreground">
+                  Confidence:
+                </span>
+                <span className="text-lg font-bold text-foreground">
+                  {apiResult.confidence}%
+                </span>
               </div>
               <div className="w-32 h-2 rounded-full bg-secondary mt-2 overflow-hidden">
                 <motion.div
@@ -163,9 +227,11 @@ export default function SignalEngine() {
                   animate={{ width: `${apiResult.confidence}%` }}
                   transition={{ duration: 1, ease: "easeOut" }}
                   className={`h-full rounded-full ${
-                    apiResult.signal === "BUY" ? "bg-gain" : 
-                    apiResult.signal === "SELL" ? "bg-loss" : 
-                    "bg-warning"
+                    apiResult.signal === "BUY"
+                      ? "bg-gain"
+                      : apiResult.signal === "SELL"
+                        ? "bg-loss"
+                        : "bg-warning"
                   }`}
                 />
               </div>
@@ -173,12 +239,18 @@ export default function SignalEngine() {
               {/* Model Metrics */}
               <div className="mt-6 w-full px-4">
                 <div className="border-t border-border pt-4">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Model Performance</span>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Model Performance
+                  </span>
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     {apiResult.metrics.map((m: any) => (
                       <div key={m.label} className="text-center">
-                        <div className="text-xs text-muted-foreground">{m.label}</div>
-                        <div className="font-mono text-sm text-foreground">{m.value}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {m.label}
+                        </div>
+                        <div className="font-mono text-sm text-foreground">
+                          {m.value}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -194,19 +266,49 @@ export default function SignalEngine() {
               transition={{ delay: 0.1 }}
               className="glass-card lg:col-span-2"
             >
-              <h3 className="section-title text-foreground mb-4">Key Factors Influencing Signal</h3>
+              <h3 className="section-title text-foreground mb-4">
+                Key Factors Influencing Signal
+              </h3>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={apiResult.features} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 20%, 18%)" />
-                  <XAxis type="number" stroke="hsl(215, 15%, 55%)" fontSize={12} domain={[0, 0.35]} />
-                  <YAxis dataKey="feature" type="category" stroke="hsl(215, 15%, 55%)" fontSize={11} width={110} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(222, 20%, 18%)"
+                  />
+                  <XAxis
+                    type="number"
+                    stroke="hsl(215, 15%, 55%)"
+                    fontSize={12}
+                    domain={[0, 0.35]}
+                  />
+                  <YAxis
+                    dataKey="feature"
+                    type="category"
+                    stroke="hsl(215, 15%, 55%)"
+                    fontSize={11}
+                    width={110}
+                  />
                   <Tooltip
-                    contentStyle={{ background: "hsl(222, 41%, 10%)", border: "1px solid hsl(222, 20%, 18%)", borderRadius: 8, color: "hsl(210, 20%, 93%)" }}
-                    formatter={(value: number) => [`${(value * 100).toFixed(1)}%`, "Importance"]}
+                    contentStyle={{
+                      background: "hsl(222, 41%, 10%)",
+                      border: "1px solid hsl(222, 20%, 18%)",
+                      borderRadius: 8,
+                      color: "hsl(210, 20%, 93%)",
+                    }}
+                    formatter={(value: number) => [
+                      `${(value * 100).toFixed(1)}%`,
+                      "Importance",
+                    ]}
                   />
                   <Bar
                     dataKey="importance"
-                    fill={apiResult.signal === "BUY" ? "hsl(160, 84%, 39%)" : apiResult.signal === "SELL" ? "hsl(0, 72%, 51%)" : "hsl(38, 92%, 50%)"}
+                    fill={
+                      apiResult.signal === "BUY"
+                        ? "hsl(160, 84%, 39%)"
+                        : apiResult.signal === "SELL"
+                          ? "hsl(0, 72%, 51%)"
+                          : "hsl(38, 92%, 50%)"
+                    }
                     radius={[0, 4, 4, 0]}
                   />
                 </BarChart>
@@ -222,23 +324,60 @@ export default function SignalEngine() {
             transition={{ delay: 0.2 }}
             className="glass-card"
           >
-            <h3 className="section-title text-foreground mb-4">Price Chart with Signals — {symbol}</h3>
+            <h3 className="section-title text-foreground mb-4">
+              Price Chart with Signals — {symbol}
+            </h3>
             <ResponsiveContainer width="100%" height={320}>
               <ComposedChart data={mockCandlestickData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 20%, 18%)" />
-                <XAxis dataKey="date" stroke="hsl(215, 15%, 55%)" fontSize={11} interval={9} />
-                <YAxis stroke="hsl(215, 15%, 55%)" fontSize={12} domain={["dataMin - 5", "dataMax + 5"]} />
-                <Tooltip contentStyle={{ background: "hsl(222, 41%, 10%)", border: "1px solid hsl(222, 20%, 18%)", borderRadius: 8, color: "hsl(210, 20%, 93%)" }} />
-                <Line type="monotone" dataKey="close" stroke="hsl(221, 83%, 53%)" strokeWidth={2} dot={(props: any) => {
-                  const { cx, cy, payload } = props;
-                  if (!payload.signal) return <circle key={props.key} r={0} />;
-                  return (
-                    <circle key={props.key} cx={cx} cy={cy} r={6}
-                      fill={payload.signal === "BUY" ? "hsl(160, 84%, 39%)" : "hsl(0, 72%, 51%)"}
-                      stroke="hsl(222, 41%, 10%)" strokeWidth={2}
-                    />
-                  );
-                }} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(222, 20%, 18%)"
+                />
+                <XAxis
+                  dataKey="date"
+                  stroke="hsl(215, 15%, 55%)"
+                  fontSize={11}
+                  interval={9}
+                />
+                <YAxis
+                  stroke="hsl(215, 15%, 55%)"
+                  fontSize={12}
+                  domain={["dataMin - 5", "dataMax + 5"]}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(222, 41%, 10%)",
+                    border: "1px solid hsl(222, 20%, 18%)",
+                    borderRadius: 8,
+                    color: "hsl(210, 20%, 93%)",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="close"
+                  stroke="hsl(221, 83%, 53%)"
+                  strokeWidth={2}
+                  dot={(props: any) => {
+                    const { cx, cy, payload } = props;
+                    if (!payload.signal)
+                      return <circle key={props.key} r={0} />;
+                    return (
+                      <circle
+                        key={props.key}
+                        cx={cx}
+                        cy={cy}
+                        r={6}
+                        fill={
+                          payload.signal === "BUY"
+                            ? "hsl(160, 84%, 39%)"
+                            : "hsl(0, 72%, 51%)"
+                        }
+                        stroke="hsl(222, 41%, 10%)"
+                        strokeWidth={2}
+                      />
+                    );
+                  }}
+                />
               </ComposedChart>
             </ResponsiveContainer>
           </motion.div>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
+import { API_BASE } from "@/lib/api";
 
 export default function SettingsPage() {
   const [user, setUser] = useState({ name: "", email: "" });
@@ -18,10 +19,10 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       const email = localStorage.getItem("userEmail") || "";
-      const res = await fetch("http://localhost:5000/api/user", {
+      const res = await fetch(`${API_BASE}/api/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name: user.name })
+        body: JSON.stringify({ email, name: user.name }),
       });
       if (res.ok) {
         localStorage.setItem("userName", user.name);
@@ -37,24 +38,29 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-
       {message && (
-        <div className="bg-green-500 text-white p-2 rounded">
-          {message}
-        </div>
+        <div className="bg-green-500 text-white p-2 rounded">{message}</div>
       )}
 
       <div>
         <h1 className="text-2xl font-bold text-foreground mb-1">Settings</h1>
-        <p className="text-muted-foreground">Configure your account and preferences</p>
+        <p className="text-muted-foreground">
+          Configure your account and preferences
+        </p>
       </div>
 
       {/* Profile */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-card space-y-4"
+      >
         <h3 className="section-title text-foreground">Profile</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Full Name</label>
+            <label className="text-sm text-muted-foreground mb-1.5 block">
+              Full Name
+            </label>
             <Input
               value={user.name}
               onChange={(e) => setUser({ ...user, name: e.target.value })}
@@ -62,7 +68,9 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Email</label>
+            <label className="text-sm text-muted-foreground mb-1.5 block">
+              Email
+            </label>
             <Input
               value={user.email}
               readOnly
@@ -70,7 +78,10 @@ export default function SettingsPage() {
             />
           </div>
         </div>
-        <Button onClick={handleSave} className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button
+          onClick={handleSave}
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+        >
           Save Changes
         </Button>
       </motion.div>
@@ -93,11 +104,15 @@ export default function SettingsPage() {
           <Slider defaultValue={[60]} max={100} step={1} className="w-full" />
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Enable stop-loss automation</span>
+          <span className="text-sm text-muted-foreground">
+            Enable stop-loss automation
+          </span>
           <Switch defaultChecked />
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Auto-rebalance portfolio</span>
+          <span className="text-sm text-muted-foreground">
+            Auto-rebalance portfolio
+          </span>
           <Switch />
         </div>
       </motion.div>
