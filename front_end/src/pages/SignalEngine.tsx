@@ -8,8 +8,6 @@ import { mockCandlestickData } from "@/lib/mockData";
 import { ChartSkeleton } from "@/components/ui/PageSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 
-const timeframes = ["1D", "1W", "1M", "3M", "1Y"];
-
 // Feature importance data (will come from backend in production)
 const defaultFeatures = [
   { feature: "Price Momentum", importance: 0.28 },
@@ -29,7 +27,6 @@ const modelMetrics = [
 
 export default function SignalEngine() {
   const [symbol, setSymbol] = useState("AAPL");
-  const [timeframe, setTimeframe] = useState("1M");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resultKey, setResultKey] = useState(0);
@@ -40,9 +37,10 @@ export default function SignalEngine() {
     setGenerated(false);
     try {
       const userEmail = localStorage.getItem("userEmail") || "";
-      const emailQuery = userEmail ? `&email=${userEmail}` : "";
+      const emailQuery = userEmail ? `?email=${userEmail}` : "";
+      // Removed timeframe parameter from API call
       const response = await fetch(
-        `http://127.0.0.1:5000/predict/${symbol}?timeframe=${timeframe}${emailQuery}`
+        `http://127.0.0.1:5000/predict/${symbol}${emailQuery}`
       );
       
       if (!response.ok) {
@@ -60,7 +58,6 @@ export default function SignalEngine() {
         features: data.features || defaultFeatures,
         description: data.description || "AI-powered trading signal based on advanced machine learning algorithms analyzing historical price data and market patterns.",
         metrics: data.metrics || modelMetrics,
-        timeframe_used: timeframe
       });
       
       setResultKey((k) => k + 1);
@@ -80,9 +77,9 @@ export default function SignalEngine() {
         <p className="text-muted-foreground text-sm">Generate AI-powered trading signals</p>
       </div>
 
-      {/* Controls */}
+      {/* Controls - Simplified without timeframe */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
           <div>
             <label className="text-sm text-muted-foreground mb-1.5 block">Stock Symbol</label>
             <Input 
@@ -91,22 +88,6 @@ export default function SignalEngine() {
               placeholder="AAPL" 
               className="bg-secondary border-border text-foreground font-mono" 
             />
-          </div>
-          <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Timeframe</label>
-            <div className="flex gap-1 flex-wrap">
-              {timeframes.map((tf) => (
-                <button
-                  key={tf}
-                  onClick={() => setTimeframe(tf)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    timeframe === tf ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tf}
-                </button>
-              ))}
-            </div>
           </div>
           <div className="flex justify-end">
             <Button onClick={handleGenerate} disabled={loading} className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-10 w-full sm:w-auto">
@@ -128,7 +109,7 @@ export default function SignalEngine() {
         <EmptyState
           icon={Brain}
           title="No Signal Generated"
-          description="Enter a stock symbol, select a timeframe, and click Generate Signal to see AI-powered trading recommendations."
+          description="Enter a stock symbol and click Generate Signal to see AI-powered trading recommendations."
         />
       )}
 
@@ -143,7 +124,7 @@ export default function SignalEngine() {
           >
             <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-foreground">Analysis for {symbol} ({apiResult.timeframe_used})</span>
+              <span className="font-semibold text-foreground">Analysis for {symbol}</span>
               <p className="text-sm text-muted-foreground mt-0.5">{apiResult.description}</p>
             </div>
           </motion.div>
