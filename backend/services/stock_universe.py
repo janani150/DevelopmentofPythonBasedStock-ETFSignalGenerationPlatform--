@@ -54,18 +54,57 @@ def get_core_indian_tickers():
         "WIPRO.NS", "ASIANPAINT.NS", "HCLTECH.NS", "MARUTI.NS", "SUNPHARMA.NS"
     ]
 
+
+def get_nifty50_tickers():
+    """Return a conservative NIFTY 50 list (suffixed with .NS).
+
+    This list is used as a guaranteed baseline to ensure major NSE stocks
+    (for example IOC.NS) are always present even if the online fetch fails.
+    """
+    return [
+        "ADANIENT.NS","ASIANPAINT.NS","AXISBANK.NS","BAJFINANCE.NS",
+        "BHARTIARTL.NS","BPCL.NS","CIPLA.NS","COALINDIA.NS","DLF.NS",
+        "EICHERMOT.NS","GAIL.NS","GRASIM.NS","HCLTECH.NS","HDFC.NS",
+        "HDFCBANK.NS","HEROHONDA.NS","HINDALCO.NS","HINDUNILVR.NS",
+        "HINDPETRO.NS","IOC.NS","ITC.NS","JSWSTEEL.NS","KOTAKBANK.NS",
+        "LT.NS","LTIM.NS","M&M.NS","MARUTI.NS","NESTLEIND.NS",
+        "NTPC.NS","ONGC.NS","POWERGRID.NS","RELIANCE.NS","SBIN.NS",
+        "SUNPHARMA.NS","TCS.NS","TATAMOTORS.NS","TATASTEEL.NS","TECHM.NS",
+        "ULTRACEMCO.NS","UPL.NS","WIPRO.NS"
+    ]
+
 # If we need the master stock list for the app
 def get_all_tickers():
     # Attempt to use the massive Nifty 500 list
     tickers = fetch_nifty500_tickers()
 
-    # Ensure JIOFIN and specific core ones are in the list if missing from wiki
+    # Ensure core and Nifty50 ones are in the list if missing from wiki
     core = get_core_indian_tickers()
     for t in core:
         if t not in tickers:
             tickers.append(t)
+    nifty50 = get_nifty50_tickers()
+    for t in nifty50:
+        if t not in tickers:
+            tickers.append(t)
 
-    unique_tickers = list(set(tickers))
+    # Normalize tickers: strip, uppercase, ensure .NS suffix
+    normalized = []
+    for t in tickers:
+        if not isinstance(t, str):
+            continue
+        norm = t.strip().upper()
+        if not norm:
+            continue
+        # If a suffix is present, keep only the base and enforce .NS
+        if '.' in norm:
+            base = norm.split('.')[0]
+            norm = f"{base}.NS"
+        else:
+            norm = f"{norm}.NS"
+        normalized.append(norm)
+
+    unique_tickers = sorted(list(set(normalized)))
     
     # Remove problematic tickers that fail Yahoo Finance locally
     bad_tickers = ["ZOMATO.NS", "TATAMOTORS.NS"]
@@ -73,4 +112,10 @@ def get_all_tickers():
         if bt in unique_tickers:
             unique_tickers.remove(bt)
             
+    # Debug: print whether IOC.NS is present (helpful when diagnosing rejections)
+    try:
+        print("IOC.NS present in universe:", "IOC.NS" in unique_tickers)
+    except Exception:
+        pass
+
     return unique_tickers

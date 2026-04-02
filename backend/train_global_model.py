@@ -3,7 +3,9 @@ import pickle
 import numpy as np
 import pandas as pd
 from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.calibration import CalibratedClassifierCV
 from services.data_fetcher import fetch_stock_data
 from services.feature_engineering import create_features
 from services.stock_universe import get_all_tickers
@@ -67,8 +69,14 @@ def train_global_model():
     
     print(f"Master dataset shape: {master_df.shape}")
     
-    # Select features to use
-    feature_cols = ['Return', 'MA20', 'MA50', 'Volatility', 'Volume_Change', 'RSI', 'MA_Cross']
+    # Select features to use (must match create_features output exactly and order matters)
+    feature_cols = [
+        'Return', 'MA20', 'MA50', 'EMA12', 'EMA26',
+        'MACD', 'MACD_Signal', 'MACD_Hist',
+        'BB_MID', 'BB_STD', 'BB_UPPER', 'BB_LOWER',
+        'RSI', 'MA_Cross', 'Volatility', 'Volume_Change',
+        'OBV', 'Momentum_20'
+    ]
     
     X = master_df[feature_cols]
     y = master_df['Target'].astype(int)
@@ -76,17 +84,25 @@ def train_global_model():
     print("Scaling features...")
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    
-    print("Training Global XGBoost Model...")
-    model = XGBClassifier(
-        n_estimators=100, 
-        max_depth=5, 
-        learning_rate=0.1, 
+
+    # Choose model: XGBoost as default; RandomForest available as alternative
+    print("Training base XGBoost model...")
+    base_model = XGBClassifier(
+        n_estimators=200,
+        max_depth=6,
+        learning_rate=0.05,
+        use_label_encoder=False,
         eval_metric='mlogloss',
         random_state=42
     )
-    
-    model.fit(X_scaled, y)
+
+    base_model.fit(X_scaled, y)
+
+    # Calibrate probabilities for better confidence estimates
+    print("Calibrating classifier probabilities (Platt scaling)")
+    clf = CalibratedClassifierCV(base_model, method='sigmoid', cv=3)
+    clf.fit(X_scaled, y)
+    model = clf
     
     # Save the models
     base_dir = os.path.dirname(os.path.abspath(__file__))

@@ -14,8 +14,13 @@ def predict_signal(ticker, models_dict):
     scaler = models_dict["global"]["scaler"]
     feature_list = models_dict["global"]["features"]
 
-    # 1. Fetch latest data
-    data = fetch_stock_data(ticker)
+    # 1. Fetch longer history to allow richer features and smoothing
+    # Use ~300 days to cover ~1 year of trading days (adjustable)
+    try:
+        data = fetch_stock_data(ticker, period="300d")
+    except ValueError as ve:
+        # Propagate user-friendly fetch errors (e.g., no data found)
+        raise
 
     # Grab the current market price before feature engineering removes rows/columns
     current_price = data['Close'].iloc[-1]
@@ -51,20 +56,25 @@ def predict_signal(ticker, models_dict):
     # 3. Select required features
     X = df[feature_list]
 
-    # 4. Take latest row only
-    latest_row = X.iloc[[-1]]
+    # 4. Use recent rows and smooth probabilities over the last N rows
+    SMOOTH_WINDOW = 3
+    recent_rows = X.iloc[-SMOOTH_WINDOW:] if len(X) >= SMOOTH_WINDOW else X
 
-    # 5. Scale
-    latest_scaled = scaler.transform(latest_row)
+    # 5. Scale the recent rows
+    recent_scaled = scaler.transform(recent_rows)
 
-    # 6. Predict
-    prediction = model.predict(latest_scaled)[0]
-    probabilities = model.predict_proba(latest_scaled)[0]
+    # 6. Predict probabilities for each recent row and average them
+    probas = model.predict_proba(recent_scaled)  # shape (k, n_classes)
+    mean_proba = probas.mean(axis=0)
 
-    # Get confidence of predicted class
-    confidence = max(probabilities)
+    # Determine predicted class using model.classes_
+    pred_idx = int(mean_proba.argmax())
+    pred_label = int(model.classes_[pred_idx])
 
-    # 7. Convert signal to text
+    # Confidence is the averaged probability for the chosen class
+    confidence = float(mean_proba[pred_idx])
+
+    # 7. Convert signal to text with confidence-based filtering
     # 2: BUY, 1: HOLD, 0: SELL (from our XGBoost training script)
     signal_map = {
         2: "BUY",
@@ -72,10 +82,25 @@ def predict_signal(ticker, models_dict):
         0: "SELL"
     }
 
+    base_signal = signal_map.get(pred_label, "UNKNOWN")
+
+    # Simplified decision rule per user request:
+    # - Keep base_signal as the original model prediction (BUY/SELL)
+    # - Only return BUY, SELL, or HOLD
+    # - If confidence >= 0.4 -> use base_signal, else -> HOLD
+    THRESHOLD = 0.4
+
+    if confidence >= THRESHOLD:
+        signal = base_signal
+    else:
+        signal = "HOLD"
+
     result = {
         "symbol": ticker,
-        "signal": signal_map.get(prediction, "UNKNOWN"),
-        "confidence": round(float(confidence), 2),
+        "signal": signal,
+        "base_signal": base_signal,
+        "confidence": round(confidence, 2),
+        "price": round(float(current_price), 2),
         "latest_price": round(float(current_price), 2),
         "change_percent": round(float(change_percent), 2)
     }

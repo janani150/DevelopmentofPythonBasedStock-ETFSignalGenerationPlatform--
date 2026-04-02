@@ -22,6 +22,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/sonner";
 import { mockCandlestickData } from "@/lib/mockData";
 import { ChartSkeleton } from "@/components/ui/PageSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
@@ -44,7 +45,7 @@ const modelMetrics = [
 ];
 
 export default function SignalEngine() {
-  const [symbol, setSymbol] = useState("AAPL");
+  const [symbol, setSymbol] = useState("RELIANCE.NS");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resultKey, setResultKey] = useState(0);
@@ -56,18 +57,33 @@ export default function SignalEngine() {
     try {
       const userEmail = localStorage.getItem("userEmail") || "";
       const emailQuery = userEmail ? `?email=${userEmail}` : "";
+      // Ensure symbol is uppercase and suffixed for NSE before sending
+      let sendSymbol = (symbol || "").trim().toUpperCase();
+      if (sendSymbol && !sendSymbol.includes(".")) {
+        sendSymbol = `${sendSymbol}.NS`;
+      }
+
       // Removed timeframe parameter from API call
       const response = await fetch(
-        `${API_BASE}/predict/${symbol}${emailQuery}`,
+        `${API_BASE}/predict/${sendSymbol}${emailQuery}`,
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch prediction");
+      // Attempt to parse JSON response (error or success)
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseErr) {
+        throw new Error("Invalid server response");
       }
-      const data = await response.json();
+
+      // If server responded with non-2xx, show backend message when available
+      if (!response.ok) {
+        const msg = data?.message || data?.error || "Server error";
+        throw new Error(msg);
+      }
 
       if (data.status === "error") {
-        throw new Error(data.message);
+        throw new Error(data.message || "Error from server");
       }
 
       setApiResult({
@@ -82,9 +98,10 @@ export default function SignalEngine() {
 
       setResultKey((k) => k + 1);
       setGenerated(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Error generating signal: " + error);
+      const message = error?.message || String(error) || "Unknown error";
+      toast.error(`Error: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -115,7 +132,7 @@ export default function SignalEngine() {
             <Input
               value={symbol}
               onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              placeholder="AAPL"
+              placeholder="Enter NSE stock (e.g., RELIANCE.NS, TCS.NS)"
               className="bg-secondary border-border text-foreground font-mono"
             />
           </div>
@@ -190,12 +207,16 @@ export default function SignalEngine() {
                     ? "bg-gain/10 text-gain"
                     : apiResult.signal === "SELL"
                       ? "bg-loss/10 text-loss"
-                      : "bg-warning/10 text-warning"
+                      : apiResult.signal?.startsWith("WEAK")
+                        ? "bg-warning/10 text-warning"
+                        : "bg-secondary/10 text-muted-foreground"
                 }`}
               >
-                {apiResult.signal === "BUY" ? (
+                {apiResult.signal === "BUY" ||
+                apiResult.signal === "WEAK BUY" ? (
                   <TrendingUp className="w-8 h-8 md:w-10 md:h-10" />
-                ) : apiResult.signal === "SELL" ? (
+                ) : apiResult.signal === "SELL" ||
+                  apiResult.signal === "WEAK SELL" ? (
                   <TrendingDown className="w-8 h-8 md:w-10 md:h-10" />
                 ) : (
                   <Minus className="w-8 h-8 md:w-10 md:h-10" />
@@ -207,7 +228,9 @@ export default function SignalEngine() {
                     ? "text-gain"
                     : apiResult.signal === "SELL"
                       ? "text-loss"
-                      : "text-warning"
+                      : apiResult.signal?.startsWith("WEAK")
+                        ? "text-warning"
+                        : "text-muted-foreground"
                 }`}
               >
                 {apiResult.signal}
@@ -231,7 +254,9 @@ export default function SignalEngine() {
                       ? "bg-gain"
                       : apiResult.signal === "SELL"
                         ? "bg-loss"
-                        : "bg-warning"
+                        : apiResult.signal?.startsWith("WEAK")
+                          ? "bg-warning"
+                          : "bg-secondary"
                   }`}
                 />
               </div>
@@ -307,7 +332,9 @@ export default function SignalEngine() {
                         ? "hsl(160, 84%, 39%)"
                         : apiResult.signal === "SELL"
                           ? "hsl(0, 72%, 51%)"
-                          : "hsl(38, 92%, 50%)"
+                          : apiResult.signal?.startsWith("WEAK")
+                            ? "hsl(45, 95%, 55%)"
+                            : "hsl(210, 10%, 60%)"
                     }
                     radius={[0, 4, 4, 0]}
                   />

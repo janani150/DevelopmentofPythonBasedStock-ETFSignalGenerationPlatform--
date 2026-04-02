@@ -38,7 +38,8 @@ def fetch_stock_data(ticker, period="6mo"):
                         dl_data.columns.name = None
                     data = dl_data
                 else:
-                    raise ValueError(f"No data found for {ticker} or its fallbacks on Yahoo.")
+                    # Friendly error message for callers to surface to users
+                    raise ValueError("No data found for this stock. Try another NSE stock.")
 
 
         # Remove column index name if it exists
@@ -52,5 +53,9 @@ def fetch_stock_data(ticker, period="6mo"):
 
         return data
 
+    except ValueError:
+        # Propagate user-friendly errors as-is
+        raise
     except Exception as e:
+        # Wrap unexpected errors with a friendly message while keeping details for logs
         raise RuntimeError(f"Error fetching data for {ticker}: {e}")

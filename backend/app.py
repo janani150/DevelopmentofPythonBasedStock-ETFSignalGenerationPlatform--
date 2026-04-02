@@ -6,6 +6,7 @@ from services.predictor import predict_signal
 from services.stock_universe import get_all_tickers
 from datetime import datetime
 
+from services.ticker_validator import validate_and_normalize_ticker
 app = Flask(__name__)
 
 # Configure CORS origins via environment variable (comma-separated), default allow all for backwards-compatibility
@@ -23,7 +24,6 @@ from routes.portfolio import portfolio_bp
 from routes.dashboard import dashboard_bp
 from routes.market import market_bp
 from routes.user import user_bp
-
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(alerts_bp, url_prefix='/api/alerts')
 app.register_blueprint(backtest_bp, url_prefix='/api/backtest')
@@ -72,6 +72,16 @@ def get_stocks():
 def predict(ticker):
     try:
         email = request.args.get('email')
+
+        # Validate & normalize ticker to NSE-only (may raise ValueError)
+        try:
+            ticker = validate_and_normalize_ticker(ticker, require_nse=True)
+        except ValueError as ve:
+            return jsonify({
+                "status": "error",
+                "message": str(ve)
+            }), 400
+
         result = predict_signal(ticker, models_dict)
 
         result["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
